@@ -7,10 +7,16 @@ const { SequentialPromiseExecutor } = require('../../lib/util');
 
 let globalExecutionSequence = [];
 
-const getTimeoutPromiseFunctionWithTag = function (timeout, flag) {
+const getTimeoutPromiseFunctionWithTag = function (timeout, flag, err1, err2) {
     return function (prevResult) {
         return Q.promise(function (resolve, reject) {
+            if (err1) {
+                throw new Error(flag);
+            }
             setTimeout(() => {
+                if (err2) {
+                    return reject(new Error(flag));
+                }
                 prevResult.push(flag);
                 // sync global variable for test reason
                 globalExecutionSequence = prevResult;
@@ -107,6 +113,101 @@ describe('Permission Library Test', function () {
                 .exec()
                 .then(function (res) {
                     expect(res).to.equal('TEST_FINISHED_MESSAGE');
+                    done();
+                });
+        });
+        it('Should catch error in execution process case A', function (done) {
+            const config = {
+                initResult: []
+            };
+            SequentialPromiseExecutor
+                .getInstance(config)
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'A', true, false))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'B'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'C'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'D'))
+                .exec()
+                .then(function (res) {
+                    done('TEST SHOULD NOT RESOLVE');
+                })
+                .catch(function(err){
+                    expect(err.message).to.equal('A');
+                    done();
+                });
+        });
+        it('Should catch error in execution process case B', function (done) {
+            const config = {
+                initResult: []
+            };
+            SequentialPromiseExecutor
+                .getInstance(config)
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'A'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'B', true, false))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'C'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'D'))
+                .exec()
+                .then(function (res) {
+                    done('TEST SHOULD NOT RESOLVE');
+                })
+                .catch(function(err){
+                    expect(err.message).to.equal('B');
+                    done();
+                });
+        });
+        it('Should catch error in execution process case C', function (done) {
+            const config = {
+                initResult: []
+            };
+            SequentialPromiseExecutor
+                .getInstance(config)
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'A', true, false))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'B', true, false))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'C'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'D'))
+                .exec()
+                .then(function (res) {
+                    done('TEST SHOULD NOT RESOLVE');
+                })
+                .catch(function(err){
+                    expect(err.message).to.equal('A');
+                    done();
+                });
+        });
+        it('Should catch error in execution process case D', function (done) {
+            const config = {
+                initResult: []
+            };
+            SequentialPromiseExecutor
+                .getInstance(config)
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'A', false, true))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'B'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'C'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'D'))
+                .exec()
+                .then(function (res) {
+                    done('TEST SHOULD NOT RESOLVE');
+                })
+                .catch(function(err){
+                    expect(err.message).to.equal('A');
+                    done();
+                });
+        });
+        it('Should catch error in execution process case E', function (done) {
+            const config = {
+                initResult: []
+            };
+            SequentialPromiseExecutor
+                .getInstance(config)
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'A'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'B', false, true))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'C'))
+                .registerPromiseFunction(getTimeoutPromiseFunctionWithTag(1, 'D'))
+                .exec()
+                .then(function (res) {
+                    done('TEST SHOULD NOT RESOLVE');
+                })
+                .catch(function(err){
+                    expect(err.message).to.equal('B');
                     done();
                 });
         });

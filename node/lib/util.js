@@ -50,40 +50,46 @@ class SequentialPromiseExecutor {
                 if (idx >= self.validateSequence.length) {
                     return seqController.emit('allTaskDone', previousResult);
                 } else {
-                    seqController.emit('newTask', previousResult);
+                    return seqController.emit('newTask', previousResult);
                 }
             });
             seqController.on('newTask', function (previousResult) {
                 return self.validateSequence[idx](previousResult)
-                .then(function (result) {
-                    if (self.rejectOn && self.rejectOn(result)) {
-                        return seqController.emit('taskFailed', result);
-                    }
-                    if (self.resolveOn && self.resolveOn(result)) {
-                        return seqController.emit('resolved', result);
-                    }
-                    seqController.emit('taskDone', result);
-                });
+                    .then(function (result) {
+                        if (self.rejectOn && self.rejectOn(result)) {
+                            return seqController.emit('taskFailed', result);
+                        }
+                        if (self.resolveOn && self.resolveOn(result)) {
+                            return seqController.emit('resolved', result);
+                        }
+                        return seqController.emit('taskDone', result);
+                    })
+                    .catch(function (error) {
+                        return seqController.emit('taskFailed', error);
+                    });
             });
-            seqController.on('allTaskDone', function (result) { 
+            seqController.on('allTaskDone', function (result) {
                 if (self.finishedMessage) {
                     return resolve(self.finishedMessage());
                 }
                 return resolve(result);
             });
-            seqController.on('resolved', function (result) { 
+            seqController.on('resolved', function (result) {
                 if (self.resolveMessage) {
                     return resolve(self.resolveMessage(result));
                 }
                 return resolve(result);
             });
-            seqController.on('taskFailed', function (result) { 
+            seqController.on('taskFailed', function (result) {
                 if (self.rejectMessage) {
                     return reject(self.rejectMessage(result));
                 }
                 return reject(result);
             });
-            seqController.emit('newTask', self.initResult);
+            seqController.on('error', function (error) {
+                return seqController.emit('taskFailed', error);
+            });
+            return seqController.emit('newTask', self.initResult);
         });
     }
     /*
