@@ -1,4 +1,5 @@
 const Q = require('q');
+const EventEmitter = require('events');
 /**
  * SequentialPromiseExecutor
  *      a class that implements the feature that execute a series of promise calls in a sequential order 
@@ -83,38 +84,6 @@ class SequentialPromiseExecutor {
             });
         });
     }
-    /*
-    exec() {
-        const self = this;
-        let idx = 0;
-        function executePromiseFun(previousResult) {
-            if (idx >= self.validateSequence.length) {
-                if (self.finishedMessage) {
-                    return Q.resolve(self.finishedMessage());
-                }
-                return Q.resolve(previousResult);
-            }
-            return self.validateSequence[idx](previousResult)
-                .then(function (result) {
-                    if (self.rejectOn && self.rejectOn(result)) {
-                        if (self.rejectMessage) {
-                            return Q.reject(self.rejectMessage(result));
-                        }
-                        return Q.reject(result);
-                    }
-                    if (self.resolveOn && self.resolveOn(result)) {
-                        if (self.resolveMessage) {
-                            return Q.resolve(self.resolveMessage(result));
-                        }
-                        return Q.resolve(result);
-                    }
-                    idx++;
-                    return executePromiseFun(result);
-                }); 
-        }
-        return executePromiseFun(this.initResult);
-    }
-    */
     registerRejectOn(rejectOnFunction) {
         this.rejectOn = rejectOnFunction;
         return this;
