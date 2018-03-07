@@ -1,4 +1,6 @@
 const Q = require('q');
+const EventEmitter = require('events');
+
 /**
  * SequentialPromiseExecutor
  *      a class that implements the feature that execute a series of promise calls in a sequential order 
@@ -44,10 +46,10 @@ class SequentialPromiseExecutor {
         return Q.promise(function (resolve, reject) {
             const seqController = new EventEmitter();
             seqController.on('taskDone', function (previousResult) {
+                idx++;
                 if (idx >= self.validateSequence.length) {
-                    return seqController.emit('allTaskDone');
+                    return seqController.emit('allTaskDone', previousResult);
                 } else {
-                    idx++;
                     seqController.emit('newTask', previousResult);
                 }
             });
@@ -58,7 +60,7 @@ class SequentialPromiseExecutor {
                         return seqController.emit('taskFailed', result);
                     }
                     if (self.resolveOn && self.resolveOn(result)) {
-                        return seqController.emit('allTaskDone', result);
+                        return seqController.emit('resolved', result);
                     }
                     seqController.emit('taskDone', result);
                 });
@@ -81,6 +83,7 @@ class SequentialPromiseExecutor {
                 }
                 return reject(result);
             });
+            seqController.emit('newTask', self.initResult);
         });
     }
     /*
@@ -136,5 +139,18 @@ class SequentialPromiseExecutor {
         return this;
     }
 }
+
+const getTimeoutPromiseFunctionWithTag = function (timeout, flag) {
+    return function (prevResult) {
+        return Q.promise(function (resolve, reject) {
+            setTimeout(() => {
+                prevResult.push(flag);
+                // sync global variable for test reason
+                globalExecutionSequence = prevResult;
+                return resolve(prevResult);
+            }, timeout);
+        });
+    };
+};
 
 module.exports = { SequentialPromiseExecutor }; 
