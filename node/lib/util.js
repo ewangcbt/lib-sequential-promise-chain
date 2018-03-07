@@ -65,7 +65,7 @@ class SequentialPromiseExecutor {
                         return seqController.emit('taskDone', result);
                     })
                     .catch(function (error) {
-                        return seqController.emit('taskFailed', error);
+                        return reject(error);
                     });
             });
             seqController.on('allTaskDone', function (result) {
@@ -87,7 +87,7 @@ class SequentialPromiseExecutor {
                 return reject(result);
             });
             seqController.on('error', function (error) {
-                return seqController.emit('taskFailed', error);
+                return reject(error);
             });
             return seqController.emit('newTask', self.initResult);
         });
